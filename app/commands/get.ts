@@ -7,7 +7,16 @@ export default function (data: Array<string>) {
   const response = get(key);
 
   if (response) {
-    const formattedResponse = `$${response.length}\r\n${response}\r\n`;
+    // Validate the record is not expired
+    if (response.ttl) {
+      const currentTime = Math.floor(Date.now());
+      const expirationTime = Math.floor(response.created) + response.ttl;
+      if (currentTime >= expirationTime) {
+        return NULL_BULK_STRING;
+      }
+    }
+
+    const formattedResponse = `$${response.value.length}\r\n${response.value}\r\n`;
     return formattedResponse;
   }
 

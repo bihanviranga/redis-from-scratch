@@ -1,13 +1,15 @@
-// This is the master object which will contain all key/value pairs.
-const memory: { [key: string]: string } = {};
+import type { RedisRecord } from "../types/RedisRecord";
 
-export function set(key: string, value: any): boolean {
-  const valueString = value.toString();
-  memory[key] = valueString;
+// This is the master object which will contain all key/value pairs.
+const memory: { [key: string]: RedisRecord } = {};
+
+// Returns true after saving successfully.
+export function set(key: string, value: RedisRecord): boolean {
+  memory[key] = value;
 
   return true;
 }
 
-export function get(key: string) {
+export function get(key: string): RedisRecord {
   return memory[key];
 }
