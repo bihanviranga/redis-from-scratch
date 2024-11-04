@@ -1,4 +1,5 @@
 import * as net from "net";
+import handleCommand from "./commands";
 
 const PORT = 6379;
 
@@ -7,9 +8,8 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
     `Connected: ${connection.remoteAddress}:${connection.remotePort}`,
   );
 
-  connection.on("data", () => {
-    console.log("Data received");
-    const response = "+PONG\r\n";
+  connection.on("data", (data: Buffer) => {
+    const response = handleCommand(data);
     connection.write(response);
   });
 
