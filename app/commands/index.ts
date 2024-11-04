@@ -1,5 +1,6 @@
 import echo from "./echo";
 import ping from "./ping";
+import set from "./set";
 
 function handleCommand(input: Buffer): string {
   console.log("Data:", input.toString());
@@ -11,6 +12,10 @@ function handleCommand(input: Buffer): string {
 
   if (command === "echo") {
     return echo(data);
+  }
+
+  if (command === "set") {
+    return set(data);
   }
 
   return "Unknown command\r\n";
