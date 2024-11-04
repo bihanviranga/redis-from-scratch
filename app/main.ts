@@ -4,7 +4,7 @@ import handleCommand from "./commands";
 const PORT = 6379;
 
 const server: net.Server = net.createServer((connection: net.Socket) => {
-  console.log("==============");
+  console.log("========================");
   console.log(
     `Connected: ${connection.remoteAddress}:${connection.remotePort}`,
   );

@@ -1,3 +1,5 @@
+import { PONG } from "../consts/responses";
+
 export default function (): string {
-  return "+PONG\r\n";
+  return PONG;
 }
