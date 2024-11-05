@@ -1,7 +1,9 @@
+import { encodeBulkString } from "../resp/encode";
+
 export default function (data: Array<string>): string {
   let response = ``;
   data.forEach((item) => {
-    const encoded = `\$${item.length}\r\n${item}\r\n`;
+    const encoded = encodeBulkString(item);
     response += encoded;
   });
   return response;

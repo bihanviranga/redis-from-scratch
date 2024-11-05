@@ -1,5 +1,6 @@
 import { NULL_BULK_STRING } from "../consts/responses";
 import { get } from "../memory";
+import { encodeBulkString } from "../resp/encode";
 
 export default function (data: Array<string>) {
   console.log("GET", data);
@@ -16,7 +17,7 @@ export default function (data: Array<string>) {
       }
     }
 
-    const formattedResponse = `$${response.value.length}\r\n${response.value}\r\n`;
+    const formattedResponse = encodeBulkString(response.value);
     return formattedResponse;
   }
 

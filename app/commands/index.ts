@@ -33,20 +33,18 @@ function handleCommand(input: Buffer): string {
 
 function parseInput(input: Buffer): { command: string; data: Array<string> } {
   const lengthIndex = 0;
-  const commandLengthIndex = 1;
+  // const commandLengthIndex = 1;
   const commandIndex = 2;
   const firstDataIndex = 4;
 
   const splitData = input.toString().split("\r\n");
-  console.log("Split Data", splitData);
+  console.log("Input data", splitData);
 
   const length = parseInt(splitData[lengthIndex].slice(1));
-  console.log("Length:", length);
 
-  const commandLength = parseInt(splitData[commandLengthIndex].slice(1));
+  // const commandLength = parseInt(splitData[commandLengthIndex].slice(1));
 
   const command = splitData[commandIndex].toLowerCase();
-  console.log("Command", command);
 
   const data = [];
 
