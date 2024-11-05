@@ -1,5 +1,6 @@
 import * as net from "net";
 import handleCommand from "./commands";
+import { readCommandLineArguments } from "./config";
 
 const PORT = 6379;
 
@@ -22,6 +23,8 @@ const server: net.Server = net.createServer((connection: net.Socket) => {
     console.log("Client disconnected");
   });
 });
+
+readCommandLineArguments();
 
 server.listen(PORT, "127.0.0.1", () => {
   console.log(`Server listening on ${PORT}`);
