@@ -1,26 +1,36 @@
-const KNOWN_ARGS = ["--dir", "--dbfilename"];
+import { ConfigKey, type ConfigMap } from "../types/config";
 
-const config: { [key: string]: string } = {};
+const config: ConfigMap = {
+  [ConfigKey.dir]: "./",
+  [ConfigKey.dbfilename]: "dump.rdb",
+};
 
 export function readCommandLineArguments() {
   if (!process.argv || process.argv.length <= 2) return;
 
-  for (let i = 2; i < process.argv.length; i++) {
-    const arg = process.argv[i];
+  for (let i = 2; i < process.argv.length; ) {
+    // Slice to remove the prefix '--'
+    const arg = process.argv[i].slice(2);
 
-    if (KNOWN_ARGS.includes(arg)) {
+    if (Object.values(ConfigKey).includes(arg as ConfigKey)) {
       const argValueIndex = i + 1;
       if (argValueIndex < process.argv.length) {
-        const argName = arg.slice(2);
+        const argName = arg as ConfigKey;
         const argValue = process.argv[argValueIndex];
         config[argName] = argValue;
+        i += 2;
       }
+    } else {
+      console.log(
+        `[config] Ignoring unsupported parameter '${arg}' and corresponding value '${process.argv[i + 1]}'`,
+      );
+      i += 2;
     }
   }
 
-  console.log("[config] Read config values:", config);
+  console.log("[config] Configuration:", config);
 }
 
 export function readConfig(key: string) {
-  return config[key];
+  return config[key as ConfigKey];
 }
