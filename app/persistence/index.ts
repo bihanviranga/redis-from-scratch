@@ -4,11 +4,10 @@ import { ConfigKey } from "../types/config";
 import {
   MAGIC_NUMBER_VALUE,
   type ParseMetadataResult,
+  RDB_OP_CODES,
 } from "../types/persistence";
 
 const RDB_VERSION_NUMBER_LENGTH = 4;
-
-const RDB_OP_CODES = [0xfa, 0xfb, 0xfc, 0xfd, 0xfe, 0xff];
 
 /**
  * Read the database file if exists.
@@ -29,6 +28,7 @@ export function readDatabaseFile() {
 
   const fileBuffer = fs.readFileSync(path);
 
+  // Read and verify the magic number header
   const magicNumber = fileBuffer.subarray(0, MAGIC_NUMBER_VALUE.length);
   if (magicNumber.toString() !== MAGIC_NUMBER_VALUE) {
     console.warn(
@@ -37,6 +37,7 @@ export function readDatabaseFile() {
     return;
   }
 
+  // Read the RDB version number
   const rdbVersionNumberEndIndex =
     MAGIC_NUMBER_VALUE.length + RDB_VERSION_NUMBER_LENGTH;
   const rdbVersionNumberBytes = fileBuffer.subarray(
@@ -52,18 +53,31 @@ export function readDatabaseFile() {
     for (let i = rdbVersionNumberEndIndex; i < fileBuffer.length; ) {
       const byte = fileBuffer[i];
       console.log("index", i, "byte", byte.toString(16));
-      if (!RDB_OP_CODES.includes(byte)) {
+      if (!Object.values(RDB_OP_CODES).includes(byte)) {
         throw new Error(
           "Unexpected data found in RDB file. File may be invalid.",
         );
       }
 
-      if (byte === 0xfa) {
-        const metadataRecord = parseMetadata(fileBuffer, i + 1);
-        metadata.push(metadataRecord);
-        i = metadataRecord.endIndex;
-      } else {
-        i++;
+      switch (byte) {
+        case RDB_OP_CODES.AUX: {
+          const metadataRecord = parseMetadata(fileBuffer, i + 1);
+          metadata.push(metadataRecord);
+          i = metadataRecord.endIndex;
+          break;
+        }
+        case RDB_OP_CODES.RESIZEDB:
+        case RDB_OP_CODES.EXPIRETIMEMS:
+        case RDB_OP_CODES.EXPIRETIME:
+        case RDB_OP_CODES.SELECTDB:
+        case RDB_OP_CODES.EOF: {
+          throw new Error(
+            `Support for opcode ${RDB_OP_CODES[byte]} is not yet implemented in this parser.`,
+          );
+        }
+        default: {
+          i++;
+        }
       }
     }
   } catch (error: any) {
