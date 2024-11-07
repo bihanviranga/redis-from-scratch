@@ -69,13 +69,17 @@ export function readDatabaseFile() {
           break;
         }
         case RDB_OP_CODES.SELECTDB: {
-          const response = parseDatabase(fileBuffer, i + 1);
-          i++;
+          const nextIndex = parseDatabaseSelector(fileBuffer, i + 1);
+          i = nextIndex;
+          break;
+        }
+        case RDB_OP_CODES.EXPIRETIMEMS:
+        case RDB_OP_CODES.EXPIRETIME: {
+          const nextIndex = parseExpireTime(fileBuffer, i + 1);
+          i = nextIndex;
           break;
         }
         case RDB_OP_CODES.RESIZEDB:
-        case RDB_OP_CODES.EXPIRETIMEMS:
-        case RDB_OP_CODES.EXPIRETIME:
         case RDB_OP_CODES.EOF: {
           throw new Error(
             `Support for opcode ${RDB_OP_CODES[byte]} is not yet implemented in this parser.`,
@@ -151,7 +155,7 @@ function parseMetadata(
   return { key: metadataKey, value: metadataValue, endIndex: readIndex };
 }
 
-function parseDatabase(buffer: Buffer, startIndex: number) {
+function parseDatabaseSelector(buffer: Buffer, startIndex: number): number {
   let readIndex = startIndex;
   const lengthByte = buffer[readIndex];
   const shiftedByte = lengthByte >> 6;
@@ -179,7 +183,8 @@ function parseDatabase(buffer: Buffer, startIndex: number) {
     throw new Error("Unexpected data found in RDB file. File may be invalid.");
   }
 
-  console.log("Database selector:", databaseSelector);
+  // return databaseSelector;
+  return readIndex;
 }
 
 /**
@@ -229,4 +234,25 @@ function decodeSpecialEncodedLength(
 
   // Exeecution should not reach here in a valid file.
   throw new Error("Unexpected data found in RDB file. File may be invalid.");
+}
+
+/*
+ * Parse the expire time (in seconds or milliseconds).
+ */
+function parseExpireTime(buffer: Buffer, startIndex: number): number {
+  const byte = buffer[startIndex];
+
+  let value: number | bigint = 0;
+  let nextIndex = startIndex;
+
+  if (byte === RDB_OP_CODES.EXPIRETIME) {
+    value = buffer.readUint32LE(startIndex + 1);
+    nextIndex = startIndex + 4 + 1; // +4 to account for the value, +1 to point to the next byte.
+  } else {
+    value = buffer.readBigUInt64LE(startIndex + 1);
+    nextIndex = startIndex + 8 + 1; // +8 to account for the value, +1 to point to the next byte.
+  }
+
+  console.log("Expire time:", value.toString());
+  return nextIndex;
 }
