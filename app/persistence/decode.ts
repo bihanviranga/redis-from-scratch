@@ -10,7 +10,7 @@ import {
 export function decodeLength(
   buffer: Buffer,
   startIndex: number,
-): { value: string | number; nextIndex: number } {
+): { value: number; nextIndex: number } {
   let decodedValue: string | number;
   let nextIndex = startIndex;
 

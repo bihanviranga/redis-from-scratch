@@ -7,10 +7,17 @@ import {
   RDB_LENGTH_ENCODING_TYPES,
   RDB_OP_CODES,
   RDB_STRING_ENCODING_TYPES,
+  RDB_VALUE_TYPES,
 } from "../types/persistence";
 import { decodeLength, decodeSpecialEncodedLength } from "./decode";
 
 const RDB_VERSION_NUMBER_LENGTH = 4;
+
+// If a value not in this array is found in the main loop, something is wrong.
+const MAIN_LOOP_ACCEPTED_VALUES = [
+  ...Object.values(RDB_OP_CODES),
+  ...Object.values(RDB_VALUE_TYPES),
+];
 
 /**
  * Read the database file if exists.
@@ -56,7 +63,7 @@ export function readDatabaseFile() {
     for (let i = rdbVersionNumberEndIndex; i < fileBuffer.length; ) {
       const byte = fileBuffer[i];
       console.log("index", i, "byte", byte.toString(16));
-      if (!Object.values(RDB_OP_CODES).includes(byte)) {
+      if (!MAIN_LOOP_ACCEPTED_VALUES.includes(byte)) {
         throw new Error(
           "Unexpected data found in RDB file. File may be invalid.",
         );
@@ -77,6 +84,7 @@ export function readDatabaseFile() {
         }
         case RDB_OP_CODES.EXPIRETIMEMS:
         case RDB_OP_CODES.EXPIRETIME: {
+          // TODO: return result and actually use this
           const nextIndex = parseExpiryTime(fileBuffer, i + 1);
           i = nextIndex;
           break;
@@ -91,13 +99,18 @@ export function readDatabaseFile() {
             `Support for opcode ${RDB_OP_CODES[byte]} is not yet implemented in this parser.`,
           );
         }
+        case RDB_VALUE_TYPES.STRING: {
+          const decoded = decodeStringValue(fileBuffer, i + 1);
+          console.log("Decoded string:", decoded);
+          i = decoded.nextIndex;
+          break;
+        }
         default: {
           i++;
         }
       }
     }
   } catch (error: any) {
-    console.log("Metadata:", metadata);
     console.error("[persistence]\tFailed to read RDB file:", error.message);
     return;
   }
@@ -205,8 +218,29 @@ function parseResizedb(buffer: Buffer, startIndex: number): number {
   const expiryTableSize = expiryTableSizeResult.value;
   nextIndex = expiryTableSizeResult.nextIndex;
 
-  console.log("hashTableSize:", hashTableSize);
-  console.log("expiryTableSize", expiryTableSize);
-
   return nextIndex;
+}
+
+/*
+ * Decode a key-value pair where the value is a string.
+ */
+function decodeStringValue(
+  buffer: Buffer,
+  startIndex: number,
+): { key: string; value: string; nextIndex: number } {
+  let nextIndex = startIndex;
+
+  const keyDecodeResult = decodeLength(buffer, nextIndex);
+  const keyStartIndex = keyDecodeResult.nextIndex;
+  const keyEndIndex = keyStartIndex + keyDecodeResult.value;
+  const key = buffer.subarray(keyStartIndex, keyEndIndex);
+  nextIndex = keyEndIndex;
+
+  const valueDecodeResult = decodeLength(buffer, nextIndex);
+  const valueStartIndex = valueDecodeResult.nextIndex;
+  const valueEndIndex = valueStartIndex + valueDecodeResult.value;
+  const value = buffer.subarray(valueStartIndex, valueEndIndex);
+  nextIndex = valueEndIndex;
+
+  return { key: key.toString(), value: value.toString(), nextIndex };
 }
