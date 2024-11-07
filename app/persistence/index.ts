@@ -63,6 +63,7 @@ export function readDatabaseFile() {
 
       switch (byte) {
         case RDB_OP_CODES.AUX: {
+          // Auxiliary fields
           const metadataRecord = parseMetadata(fileBuffer, i + 1);
           metadata.push(metadataRecord);
           i = metadataRecord.endIndex;
@@ -75,11 +76,15 @@ export function readDatabaseFile() {
         }
         case RDB_OP_CODES.EXPIRETIMEMS:
         case RDB_OP_CODES.EXPIRETIME: {
-          const nextIndex = parseExpireTime(fileBuffer, i + 1);
+          const nextIndex = parseExpiryTime(fileBuffer, i + 1);
           i = nextIndex;
           break;
         }
-        case RDB_OP_CODES.RESIZEDB:
+        case RDB_OP_CODES.RESIZEDB: {
+          const nextIndex = parseResizedb(fileBuffer, i + 1);
+          i = nextIndex;
+          break;
+        }
         case RDB_OP_CODES.EOF: {
           throw new Error(
             `Support for opcode ${RDB_OP_CODES[byte]} is not yet implemented in this parser.`,
@@ -167,7 +172,7 @@ function parseDatabaseSelector(buffer: Buffer, startIndex: number): number {
   if (msbs === RDB_LENGTH_ENCODING_TYPES.READ_6_BITS) {
     databaseSelector = lengthByte;
     readIndex += 1;
-  } else if (msbs >= RDB_LENGTH_ENCODING_TYPES.SPECIAL_ENCODING) {
+  } else if (msbs === RDB_LENGTH_ENCODING_TYPES.SPECIAL_ENCODING) {
     const decodedLength = decodeSpecialEncodedLength(buffer, readIndex);
     databaseSelector = decodedLength.value;
     readIndex = decodedLength.nextIndex;
@@ -190,6 +195,7 @@ function parseDatabaseSelector(buffer: Buffer, startIndex: number): number {
 /**
  * Decode lengths that are encoded as strings.
  * ref: https://rdb.fnordig.de/file_format.html#string-encoding
+ * TODO: move to a helper file
  */
 function decodeSpecialEncodedLength(
   buffer: Buffer,
@@ -239,7 +245,7 @@ function decodeSpecialEncodedLength(
 /*
  * Parse the expire time (in seconds or milliseconds).
  */
-function parseExpireTime(buffer: Buffer, startIndex: number): number {
+function parseExpiryTime(buffer: Buffer, startIndex: number): number {
   const byte = buffer[startIndex];
 
   let value: number | bigint = 0;
@@ -254,5 +260,64 @@ function parseExpireTime(buffer: Buffer, startIndex: number): number {
   }
 
   console.log("Expire time:", value.toString());
+  return nextIndex;
+}
+
+function parseResizedb(buffer: Buffer, startIndex: number): number {
+  let nextIndex = startIndex;
+  let lengthByte = buffer[nextIndex];
+  let shiftedByte = lengthByte >> 6;
+  const mask = 0b00000011;
+  let msbs = mask & shiftedByte;
+
+  let hashTableSize = 0;
+
+  if (msbs === RDB_LENGTH_ENCODING_TYPES.READ_6_BITS) {
+    hashTableSize = lengthByte;
+    nextIndex += 1;
+  } else if (msbs === RDB_LENGTH_ENCODING_TYPES.SPECIAL_ENCODING) {
+    const decodedLength = decodeSpecialEncodedLength(buffer, nextIndex);
+    hashTableSize = decodedLength.value;
+    nextIndex = decodedLength.nextIndex;
+  } else if (msbs === RDB_LENGTH_ENCODING_TYPES.READ_14_BITS) {
+    throw new Error(
+      "Found length encoding method that is not yet supported in this parser.",
+    );
+  } else if (msbs === RDB_LENGTH_ENCODING_TYPES.READ_4_BYTES) {
+    throw new Error(
+      "Found length encoding method that is not yet supported in this parser.",
+    );
+  } else {
+    throw new Error("Unexpected data found in RDB file. File may be invalid.");
+  }
+
+  let expiryTableSize = 0;
+
+  lengthByte = buffer[nextIndex];
+  shiftedByte = lengthByte >> 6;
+  msbs = mask & shiftedByte;
+
+  if (msbs === RDB_LENGTH_ENCODING_TYPES.READ_6_BITS) {
+    expiryTableSize = lengthByte;
+    nextIndex += 1;
+  } else if (msbs === RDB_LENGTH_ENCODING_TYPES.SPECIAL_ENCODING) {
+    const decodedLength = decodeSpecialEncodedLength(buffer, nextIndex);
+    expiryTableSize = decodedLength.value;
+    nextIndex = decodedLength.nextIndex;
+  } else if (msbs === RDB_LENGTH_ENCODING_TYPES.READ_14_BITS) {
+    throw new Error(
+      "Found length encoding method that is not yet supported in this parser.",
+    );
+  } else if (msbs === RDB_LENGTH_ENCODING_TYPES.READ_4_BYTES) {
+    throw new Error(
+      "Found length encoding method that is not yet supported in this parser.",
+    );
+  } else {
+    throw new Error("Unexpected data found in RDB file. File may be invalid.");
+  }
+
+  console.log("hashTableSize:", hashTableSize);
+  console.log("expiryTableSize", expiryTableSize);
+
   return nextIndex;
 }
