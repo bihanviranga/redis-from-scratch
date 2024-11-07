@@ -4,7 +4,9 @@ import { ConfigKey } from "../types/config";
 import {
   MAGIC_NUMBER_VALUE,
   type ParseMetadataResult,
+  RDB_LENGTH_ENCODING_TYPES,
   RDB_OP_CODES,
+  RDB_STRING_ENCODING_TYPES,
 } from "../types/persistence";
 
 const RDB_VERSION_NUMBER_LENGTH = 4;
@@ -66,10 +68,14 @@ export function readDatabaseFile() {
           i = metadataRecord.endIndex;
           break;
         }
+        case RDB_OP_CODES.SELECTDB: {
+          const response = parseDatabase(fileBuffer, i + 1);
+          i++;
+          break;
+        }
         case RDB_OP_CODES.RESIZEDB:
         case RDB_OP_CODES.EXPIRETIMEMS:
         case RDB_OP_CODES.EXPIRETIME:
-        case RDB_OP_CODES.SELECTDB:
         case RDB_OP_CODES.EOF: {
           throw new Error(
             `Support for opcode ${RDB_OP_CODES[byte]} is not yet implemented in this parser.`,
@@ -89,6 +95,7 @@ export function readDatabaseFile() {
 
 /**
  * Parse one key-value pair of metadata starting from the `startIndex` in `buffer`.
+ * TODO: change the magic numbers (for msb codes and special encoding methods) to types.
  */
 function parseMetadata(
   buffer: Buffer,
@@ -106,7 +113,7 @@ function parseMetadata(
     const mask = 0b00000011;
     const msbs = mask & shiftedByte;
 
-    if (msbs === 0b00) {
+    if (msbs === RDB_LENGTH_ENCODING_TYPES.READ_6_BITS) {
       const metadataLength = byte;
       const metadataEndIndex = readIndex + metadataLength + 1;
       const metadata = buffer.subarray(readIndex + 1, metadataEndIndex); // +1 to skip the byte that contains the length
@@ -117,19 +124,10 @@ function parseMetadata(
         metadataValue = metadata.toString();
         break;
       }
-    } else if (msbs === 0b01) {
-      throw new Error(
-        "Found length encoding method that is not yet supported in this parser.",
-      );
-    } else if (msbs === 0b10) {
-      throw new Error(
-        "Found length encoding method that is not yet supported in this parser.",
-      );
-    } else if (msbs >= 0b11) {
-      // Special encoding
+    } else if (msbs >= RDB_LENGTH_ENCODING_TYPES.SPECIAL_ENCODING) {
       const leastSixMask = 0b00111111;
-      const leastSix = leastSixMask & byte;
-      if (leastSix === 0) {
+      const encodingType = leastSixMask & byte;
+      if (encodingType === RDB_STRING_ENCODING_TYPES.INT_8_BIT) {
         // Value is in the next 8 bits
         const value = buffer[readIndex + 1];
         readIndex = readIndex + 1 + 1; // +1 to account for the value, +1 to point to the next byte
@@ -137,11 +135,7 @@ function parseMetadata(
           metadataValue = value;
           break;
         }
-      } else if (leastSix === 1) {
-        throw new Error(
-          "Found integer encoding method that is not yet supported in this parser.",
-        );
-      } else if (leastSix === 2) {
+      } else if (encodingType === RDB_STRING_ENCODING_TYPES.INT_32_BIT) {
         // Value is in the next 32 bits
         const value = buffer.readUint32LE(readIndex + 1);
         readIndex = readIndex + 4 + 1; // +4 to account for the value, +1 to point to the next byte
@@ -149,11 +143,27 @@ function parseMetadata(
           metadataValue = value;
           break;
         }
+      } else if (encodingType === RDB_STRING_ENCODING_TYPES.INT_16_BIT) {
+        throw new Error(
+          "Found integer encoding method that is not yet supported in this parser.",
+        );
+      } else if (encodingType === RDB_STRING_ENCODING_TYPES.COMPRESSED_STRING) {
+        throw new Error(
+          "Found integer encoding method that is not yet supported in this parser.",
+        );
       } else {
         throw new Error(
           "Unexpected data found in RDB file. File may be invalid.",
         );
       }
+    } else if (msbs === RDB_LENGTH_ENCODING_TYPES.READ_14_BITS) {
+      throw new Error(
+        "Found length encoding method that is not yet supported in this parser.",
+      );
+    } else if (msbs === RDB_LENGTH_ENCODING_TYPES.READ_4_BYTES) {
+      throw new Error(
+        "Found length encoding method that is not yet supported in this parser.",
+      );
     } else {
       throw new Error(
         "Unexpected data found in RDB file. File may be invalid.",
