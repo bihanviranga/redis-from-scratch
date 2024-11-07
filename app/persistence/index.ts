@@ -151,6 +151,37 @@ function parseMetadata(
   return { key: metadataKey, value: metadataValue, endIndex: readIndex };
 }
 
+function parseDatabase(buffer: Buffer, startIndex: number) {
+  let readIndex = startIndex;
+  const lengthByte = buffer[readIndex];
+  const shiftedByte = lengthByte >> 6;
+  const mask = 0b00000011;
+  const msbs = mask & shiftedByte;
+
+  let databaseSelector = 0;
+
+  if (msbs === RDB_LENGTH_ENCODING_TYPES.READ_6_BITS) {
+    databaseSelector = lengthByte;
+    readIndex += 1;
+  } else if (msbs >= RDB_LENGTH_ENCODING_TYPES.SPECIAL_ENCODING) {
+    const decodedLength = decodeSpecialEncodedLength(buffer, readIndex);
+    databaseSelector = decodedLength.value;
+    readIndex = decodedLength.nextIndex;
+  } else if (msbs === RDB_LENGTH_ENCODING_TYPES.READ_14_BITS) {
+    throw new Error(
+      "Found length encoding method that is not yet supported in this parser.",
+    );
+  } else if (msbs === RDB_LENGTH_ENCODING_TYPES.READ_4_BYTES) {
+    throw new Error(
+      "Found length encoding method that is not yet supported in this parser.",
+    );
+  } else {
+    throw new Error("Unexpected data found in RDB file. File may be invalid.");
+  }
+
+  console.log("Database selector:", databaseSelector);
+}
+
 /**
  * Decode lengths that are encoded as strings.
  * ref: https://rdb.fnordig.de/file_format.html#string-encoding
