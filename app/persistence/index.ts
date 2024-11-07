@@ -102,8 +102,8 @@ function parseMetadata(
   startIndex: number,
 ): ParseMetadataResult {
   let readIndex = startIndex;
-  let metadataKey;
-  let metadataValue;
+  let metadataKey = "";
+  let metadataValue: string | number = "";
 
   while (true) {
     // Getting the length encoding method using the two MSBs
@@ -125,37 +125,14 @@ function parseMetadata(
         break;
       }
     } else if (msbs >= RDB_LENGTH_ENCODING_TYPES.SPECIAL_ENCODING) {
-      const leastSixMask = 0b00111111;
-      const encodingType = leastSixMask & byte;
-      if (encodingType === RDB_STRING_ENCODING_TYPES.INT_8_BIT) {
-        // Value is in the next 8 bits
-        const value = buffer[readIndex + 1];
-        readIndex = readIndex + 1 + 1; // +1 to account for the value, +1 to point to the next byte
-        if (metadataKey) {
-          metadataValue = value;
-          break;
-        }
-      } else if (encodingType === RDB_STRING_ENCODING_TYPES.INT_32_BIT) {
-        // Value is in the next 32 bits
-        const value = buffer.readUint32LE(readIndex + 1);
-        readIndex = readIndex + 4 + 1; // +4 to account for the value, +1 to point to the next byte
-        if (metadataKey) {
-          metadataValue = value;
-          break;
-        }
-      } else if (encodingType === RDB_STRING_ENCODING_TYPES.INT_16_BIT) {
-        throw new Error(
-          "Found integer encoding method that is not yet supported in this parser.",
-        );
-      } else if (encodingType === RDB_STRING_ENCODING_TYPES.COMPRESSED_STRING) {
-        throw new Error(
-          "Found integer encoding method that is not yet supported in this parser.",
-        );
+      const decodedLength = decodeSpecialEncodedLength(buffer, readIndex);
+      if (!metadataKey) {
+        metadataKey = decodedLength.value.toString();
       } else {
-        throw new Error(
-          "Unexpected data found in RDB file. File may be invalid.",
-        );
+        metadataValue = decodedLength.value;
       }
+      readIndex = decodedLength.nextIndex;
+      break;
     } else if (msbs === RDB_LENGTH_ENCODING_TYPES.READ_14_BITS) {
       throw new Error(
         "Found length encoding method that is not yet supported in this parser.",
@@ -172,4 +149,53 @@ function parseMetadata(
   }
 
   return { key: metadataKey, value: metadataValue, endIndex: readIndex };
+}
+
+/**
+ * Decode lengths that are encoded as strings.
+ * ref: https://rdb.fnordig.de/file_format.html#string-encoding
+ */
+function decodeSpecialEncodedLength(
+  buffer: Buffer,
+  startIndex: number,
+): { value: number; nextIndex: number } {
+  let nextIndex = startIndex;
+  const lengthByte = buffer[nextIndex];
+  const leastSixBitsMask = 0b00111111;
+  const encodingType = leastSixBitsMask & lengthByte;
+
+  if (encodingType === RDB_STRING_ENCODING_TYPES.INT_8_BIT) {
+    // Value is in the next 8 bits
+    const value = buffer[nextIndex + 1];
+    nextIndex = nextIndex + 1 + 1; // +1 to account for the value, +1 to point to the next byte.
+    return {
+      value,
+      nextIndex,
+    };
+  }
+
+  if (encodingType === RDB_STRING_ENCODING_TYPES.INT_32_BIT) {
+    // Value is in the next 32 bits
+    const value = buffer.readUint32LE(nextIndex + 1);
+    nextIndex = nextIndex + 4 + 1; // +4 to account for the value, +1 to point to the next byte.
+    return {
+      value,
+      nextIndex,
+    };
+  }
+
+  if (encodingType === RDB_STRING_ENCODING_TYPES.INT_16_BIT) {
+    throw new Error(
+      "Found integer encoding method that is not yet supported in this parser.",
+    );
+  }
+
+  if (encodingType === RDB_STRING_ENCODING_TYPES.COMPRESSED_STRING) {
+    throw new Error(
+      "Found integer encoding method that is not yet supported in this parser.",
+    );
+  }
+
+  // Exeecution should not reach here in a valid file.
+  throw new Error("Unexpected data found in RDB file. File may be invalid.");
 }
