@@ -6,6 +6,8 @@ Implementing redis from scratch to complete the challenge on codecrafters.io.
 
 More features on the way.
 
+Currenly implementing: persisting to disk
+
 ## Running
 
 ```bash
