@@ -3,6 +3,7 @@ import ping from "./ping";
 import set from "./set";
 import get from "./get";
 import config from "./config";
+import keys from "./keys";
 
 function handleCommand(input: Buffer): string {
   console.log("Data:", input.toString());
@@ -26,6 +27,10 @@ function handleCommand(input: Buffer): string {
 
   if (command === "config") {
     return config(data);
+  }
+
+  if (command === "keys") {
+    return keys(data);
   }
 
   return "Unknown command\r\n";

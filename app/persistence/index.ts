@@ -32,7 +32,8 @@ const MAIN_LOOP_ACCEPTED_VALUES = [
  */
 export function readDatabaseFile() {
   // Read DB file if exists.
-  const path = readConfig(ConfigKey.dir) + readConfig(ConfigKey.dbfilename);
+  const path =
+    readConfig(ConfigKey.dir) + "/" + readConfig(ConfigKey.dbfilename);
 
   if (!fs.existsSync(path)) {
     console.warn(

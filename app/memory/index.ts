@@ -13,3 +13,11 @@ export function set(key: string, value: RedisRecord): boolean {
 export function get(key: string): RedisRecord {
   return memory[key];
 }
+
+export function getKeysByPattern(pattern: string): Array<string> {
+  if (pattern === "*") {
+    return Object.keys(memory);
+  }
+
+  return [];
+}
