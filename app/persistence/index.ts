@@ -141,9 +141,6 @@ export function readDatabaseFile() {
   }
 
   // Save the parsed data to redis database.
-  // FIXME: TTL time is not saved here.
-  // FIXME: created date might have to change - because we don't get a created date,
-  // but rather the expire timestamp.
   data.forEach((record) =>
     set(record.key, {
       value: record.value.toString(),
