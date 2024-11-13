@@ -9,9 +9,15 @@ import {
   RDB_STRING_ENCODING_TYPES,
   RDB_VALUE_TYPES,
 } from "../types/persistence";
-import { decodeLength, decodeSpecialEncodedLength } from "./decode";
+import {
+  decodeLength,
+  decodeSpecialEncodedLength,
+  decodeStringValue,
+} from "./decode";
 
 const RDB_VERSION_NUMBER_LENGTH = 4;
+
+const RDB_CHECKSUM_LENGTH = 8;
 
 // If a value not in this array is found in the main loop, something is wrong.
 const MAIN_LOOP_ACCEPTED_VALUES = [
@@ -62,7 +68,7 @@ export function readDatabaseFile() {
   try {
     for (let i = rdbVersionNumberEndIndex; i < fileBuffer.length; ) {
       const byte = fileBuffer[i];
-      console.log("index", i, "byte", byte.toString(16));
+      // console.log("index", i, "byte", byte.toString(16));
       if (!MAIN_LOOP_ACCEPTED_VALUES.includes(byte)) {
         throw new Error(
           "Unexpected data found in RDB file. File may be invalid.",
@@ -95,9 +101,9 @@ export function readDatabaseFile() {
           break;
         }
         case RDB_OP_CODES.EOF: {
-          throw new Error(
-            `Support for opcode ${RDB_OP_CODES[byte]} is not yet implemented in this parser.`,
-          );
+          const nextIndex = parseEOFSection(fileBuffer, i + 1);
+          i = nextIndex;
+          break;
         }
         case RDB_VALUE_TYPES.STRING: {
           const decoded = decodeStringValue(fileBuffer, i + 1);
@@ -222,25 +228,19 @@ function parseResizedb(buffer: Buffer, startIndex: number): number {
 }
 
 /*
- * Decode a key-value pair where the value is a string.
+ * Parse the EOF section.
  */
-function decodeStringValue(
-  buffer: Buffer,
-  startIndex: number,
-): { key: string; value: string; nextIndex: number } {
+function parseEOFSection(buffer: Buffer, startIndex: number): number {
   let nextIndex = startIndex;
 
-  const keyDecodeResult = decodeLength(buffer, nextIndex);
-  const keyStartIndex = keyDecodeResult.nextIndex;
-  const keyEndIndex = keyStartIndex + keyDecodeResult.value;
-  const key = buffer.subarray(keyStartIndex, keyEndIndex);
-  nextIndex = keyEndIndex;
+  const checksum = buffer.readBigUInt64LE(startIndex);
+  console.log(`[persistence]\tRDB file checksum: ${checksum}`);
+  nextIndex = nextIndex + RDB_CHECKSUM_LENGTH;
 
-  const valueDecodeResult = decodeLength(buffer, nextIndex);
-  const valueStartIndex = valueDecodeResult.nextIndex;
-  const valueEndIndex = valueStartIndex + valueDecodeResult.value;
-  const value = buffer.subarray(valueStartIndex, valueEndIndex);
-  nextIndex = valueEndIndex;
+  // Verify that the file ends here. Otherwise it could an invalid file.
+  if (nextIndex === buffer.length) {
+    return nextIndex;
+  }
 
-  return { key: key.toString(), value: value.toString(), nextIndex };
+  throw new Error("Expected EOF but found more data. File may be invalid.");
 }

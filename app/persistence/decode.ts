@@ -92,3 +92,27 @@ export function decodeSpecialEncodedLength(
   // Exeecution should not reach here in a valid file.
   throw new Error("Unexpected data found in RDB file. File may be invalid.");
 }
+
+/*
+ * Decode a key-value pair where the value is a string.
+ */
+export function decodeStringValue(
+  buffer: Buffer,
+  startIndex: number,
+): { key: string; value: string; nextIndex: number } {
+  let nextIndex = startIndex;
+
+  const keyDecodeResult = decodeLength(buffer, nextIndex);
+  const keyStartIndex = keyDecodeResult.nextIndex;
+  const keyEndIndex = keyStartIndex + keyDecodeResult.value;
+  const key = buffer.subarray(keyStartIndex, keyEndIndex);
+  nextIndex = keyEndIndex;
+
+  const valueDecodeResult = decodeLength(buffer, nextIndex);
+  const valueStartIndex = valueDecodeResult.nextIndex;
+  const valueEndIndex = valueStartIndex + valueDecodeResult.value;
+  const value = buffer.subarray(valueStartIndex, valueEndIndex);
+  nextIndex = valueEndIndex;
+
+  return { key: key.toString(), value: value.toString(), nextIndex };
+}
