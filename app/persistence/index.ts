@@ -3,7 +3,7 @@ import { readConfig } from "../config";
 import { ConfigKey } from "../types/config";
 import {
   MAGIC_NUMBER_VALUE,
-  type ParseMetadataResult,
+  type ParseKeyValueResult,
   RDB_LENGTH_ENCODING_TYPES,
   RDB_OP_CODES,
   RDB_STRING_ENCODING_TYPES,
@@ -14,6 +14,7 @@ import {
   decodeSpecialEncodedLength,
   decodeStringValue,
 } from "./decode";
+import { set } from "../memory";
 
 const RDB_VERSION_NUMBER_LENGTH = 4;
 
@@ -63,7 +64,8 @@ export function readDatabaseFile() {
   const rdbVersionNumber = parseInt(rdbVersionNumberBytes.toString(), 2);
   console.log("[persistence]\tRDB version:", rdbVersionNumber);
 
-  const metadata: Array<ParseMetadataResult> = [];
+  const metadata: Array<ParseKeyValueResult> = [];
+  const data: Array<ParseKeyValueResult> = [];
 
   try {
     for (let i = rdbVersionNumberEndIndex; i < fileBuffer.length; ) {
@@ -80,7 +82,7 @@ export function readDatabaseFile() {
           // Auxiliary fields
           const metadataRecord = parseMetadata(fileBuffer, i + 1);
           metadata.push(metadataRecord);
-          i = metadataRecord.endIndex;
+          i = metadataRecord.nextIndex;
           break;
         }
         case RDB_OP_CODES.SELECTDB: {
@@ -107,7 +109,7 @@ export function readDatabaseFile() {
         }
         case RDB_VALUE_TYPES.STRING: {
           const decoded = decodeStringValue(fileBuffer, i + 1);
-          console.log("Decoded string:", decoded);
+          data.push(decoded);
           i = decoded.nextIndex;
           break;
         }
@@ -120,6 +122,17 @@ export function readDatabaseFile() {
     console.error("[persistence]\tFailed to read RDB file:", error.message);
     return;
   }
+
+  // Save the parsed data to redis database.
+  // FIXME: TTL time is not saved here.
+  // FIXME: created date might have to change - because we don't get a created date,
+  // but rather the expire timestamp.
+  data.forEach((record) =>
+    set(record.key, {
+      value: record.value.toString(),
+      created: new Date().getTime(),
+    }),
+  );
 }
 
 /**
@@ -129,7 +142,7 @@ export function readDatabaseFile() {
 function parseMetadata(
   buffer: Buffer,
   startIndex: number,
-): ParseMetadataResult {
+): ParseKeyValueResult {
   let readIndex = startIndex;
   let metadataKey = "";
   let metadataValue: string | number = "";
@@ -177,7 +190,7 @@ function parseMetadata(
     }
   }
 
-  return { key: metadataKey, value: metadataValue, endIndex: readIndex };
+  return { key: metadataKey, value: metadataValue, nextIndex: readIndex };
 }
 
 function parseDatabaseSelector(buffer: Buffer, startIndex: number): number {

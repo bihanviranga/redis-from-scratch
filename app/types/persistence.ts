@@ -1,6 +1,6 @@
 export const MAGIC_NUMBER_VALUE = "REDIS";
 
-export type ParseMetadataResult = {
+export type ParseKeyValueResult = {
   key: string;
   value: string | number;
   nextIndex: number;

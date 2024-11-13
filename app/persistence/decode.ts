@@ -1,6 +1,7 @@
 import {
   RDB_LENGTH_ENCODING_TYPES,
   RDB_STRING_ENCODING_TYPES,
+  type ParseKeyValueResult,
 } from "../types/persistence";
 
 /**
@@ -99,7 +100,7 @@ export function decodeSpecialEncodedLength(
 export function decodeStringValue(
   buffer: Buffer,
   startIndex: number,
-): { key: string; value: string; nextIndex: number } {
+): ParseKeyValueResult {
   let nextIndex = startIndex;
 
   const keyDecodeResult = decodeLength(buffer, nextIndex);
