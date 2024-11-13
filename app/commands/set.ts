@@ -29,7 +29,7 @@ export default function (data: Array<string>) {
 
   const valueString = data[valIndex].toString();
   const created = new Date().getTime();
-  const ttl = pxValue;
+  const ttl = pxValue ? BigInt(created + pxValue) : undefined;
 
   const record: RedisRecord = {
     value: valueString,

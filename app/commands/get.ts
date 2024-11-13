@@ -11,8 +11,7 @@ export default function (data: Array<string>) {
     // Validate the record is not expired
     if (response.ttl) {
       const currentTime = Date.now();
-      const expirationTime = response.created + response.ttl;
-      if (currentTime >= expirationTime) {
+      if (currentTime >= response.ttl) {
         return NULL_BULK_STRING;
       }
     }

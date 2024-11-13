@@ -68,6 +68,10 @@ export function readDatabaseFile() {
   const metadata: Array<ParseKeyValueResult> = [];
   const data: Array<ParseKeyValueResult> = [];
 
+  // This stores the last read expiry time, so when the next key/value pair is read, we can use this
+  // as the expiry time and set this back to null.
+  let expiryTime: number | bigint | null = null;
+
   try {
     for (let i = rdbVersionNumberEndIndex; i < fileBuffer.length; ) {
       const byte = fileBuffer[i];
@@ -94,8 +98,9 @@ export function readDatabaseFile() {
         case RDB_OP_CODES.EXPIRETIMEMS:
         case RDB_OP_CODES.EXPIRETIME: {
           // TODO: return result and actually use this
-          const nextIndex = parseExpiryTime(fileBuffer, i + 1);
-          i = nextIndex;
+          const expiryTimeResult = parseExpiryTime(fileBuffer, i);
+          i = expiryTimeResult.nextIndex;
+          expiryTime = expiryTimeResult.expiryTime;
           break;
         }
         case RDB_OP_CODES.RESIZEDB: {
@@ -110,6 +115,17 @@ export function readDatabaseFile() {
         }
         case RDB_VALUE_TYPES.STRING: {
           const decoded = decodeStringValue(fileBuffer, i + 1);
+          if (expiryTime) {
+            if (typeof expiryTime === "bigint") {
+              // This is in milliseconds
+              decoded.expiry = expiryTime;
+              expiryTime = null;
+            } else if (typeof expiryTime === "number") {
+              // This is in seconds, we convert it to milliseconds
+              decoded.expiry = BigInt(expiryTime * 1000);
+              expiryTime = null;
+            }
+          }
           data.push(decoded);
           i = decoded.nextIndex;
           break;
@@ -132,6 +148,7 @@ export function readDatabaseFile() {
     set(record.key, {
       value: record.value.toString(),
       created: new Date().getTime(),
+      ttl: record.expiry,
     }),
   );
 }
@@ -204,7 +221,10 @@ function parseDatabaseSelector(buffer: Buffer, startIndex: number): number {
 /*
  * Parse the expire time (in seconds or milliseconds).
  */
-function parseExpiryTime(buffer: Buffer, startIndex: number): number {
+function parseExpiryTime(
+  buffer: Buffer,
+  startIndex: number,
+): { nextIndex: number; expiryTime: bigint | number } {
   const byte = buffer[startIndex];
 
   let value: number | bigint = 0;
@@ -213,15 +233,14 @@ function parseExpiryTime(buffer: Buffer, startIndex: number): number {
   if (byte === RDB_OP_CODES.EXPIRETIME) {
     // Expire time is in seconds, stored in the next 4 bytes.
     value = buffer.readUint32LE(startIndex + 1);
-    nextIndex = startIndex + 4 + 1; // +4 to account for the value, +1 to point to the next byte.
+    nextIndex = startIndex + 4 + 1; // +4 to account for the value, +1 to account for the OPCODE
   } else {
     // Expire time is in milliseconds, stored in the next 8 bytes.
     value = buffer.readBigUInt64LE(startIndex + 1);
-    nextIndex = startIndex + 8 + 1; // +8 to account for the value, +1 to point to the next byte.
+    nextIndex = startIndex + 8 + 1; // +8 to account for the value, +1 to account for the OPCODE
   }
 
-  console.log("Expire time:", value.toString());
-  return nextIndex;
+  return { nextIndex, expiryTime: value };
 }
 
 /*
