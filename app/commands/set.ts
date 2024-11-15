@@ -1,6 +1,6 @@
 import { NULL_BULK_STRING, OK } from "../consts/responses";
 import { set } from "../memory";
-import type { RedisRecord } from "../types/RedisRecord";
+import type { RedisRecord } from "../types/redis";
 
 export default function (data: Array<string>) {
   const keyIndex = 0;

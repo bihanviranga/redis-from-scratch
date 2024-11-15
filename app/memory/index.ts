@@ -1,4 +1,4 @@
-import type { RedisRecord } from "../types/RedisRecord";
+import type { RedisRecord } from "../types/redis";
 
 // This is the master object which will contain all key/value pairs.
 const memory: { [key: string]: RedisRecord } = {};
