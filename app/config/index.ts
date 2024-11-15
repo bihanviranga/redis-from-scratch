@@ -3,6 +3,7 @@ import { ConfigKey, type ConfigMap } from "../types/config";
 const config: ConfigMap = {
   [ConfigKey.dir]: "./",
   [ConfigKey.dbfilename]: "dump.rdb",
+  [ConfigKey.port]: "6379",
 };
 
 export function readCommandLineArguments() {

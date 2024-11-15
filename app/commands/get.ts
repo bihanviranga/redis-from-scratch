@@ -3,7 +3,6 @@ import { get } from "../memory";
 import { encodeBulkString } from "../resp/encode";
 
 export default function (data: Array<string>) {
-  console.log("GET", data);
   const key = data[0];
   const response = get(key);
 

@@ -75,7 +75,6 @@ export function readDatabaseFile() {
   try {
     for (let i = rdbVersionNumberEndIndex; i < fileBuffer.length; ) {
       const byte = fileBuffer[i];
-      // console.log("index", i, "byte", byte.toString(16));
       if (!MAIN_LOOP_ACCEPTED_VALUES.includes(byte)) {
         throw new Error(
           "Unexpected data found in RDB file. File may be invalid.",

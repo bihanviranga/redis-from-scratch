@@ -3,7 +3,6 @@ import { getKeysByPattern } from "../memory";
 import { encodeArray } from "../resp/encode";
 
 export default function (data: Array<string>) {
-  console.log("KEYS", data);
   const pattern = data[0];
 
   // HACK: need proper pattern parsing here. This is a temporary hack.

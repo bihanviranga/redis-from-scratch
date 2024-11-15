@@ -3,6 +3,8 @@ export enum ConfigKey {
   dbfilename = "dbfilename",
   // Location of the database file
   dir = "dir",
+  // listening port
+  port = "port",
 }
 
 export type ConfigMap = Record<ConfigKey, string>;

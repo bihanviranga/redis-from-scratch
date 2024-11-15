@@ -1,9 +1,11 @@
 import * as net from "net";
 import handleCommand from "../commands";
-
-const PORT = 6379;
+import { readConfig } from "../config";
+import { ConfigKey } from "../types/config";
 
 export function startServer() {
+  const PORT = parseInt(readConfig(ConfigKey.port));
+
   const server: net.Server = net.createServer((connection: net.Socket) => {
     console.log(
       `[server]\tConnected: ${connection.remoteAddress}:${connection.remotePort}`,

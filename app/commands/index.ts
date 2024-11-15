@@ -6,7 +6,6 @@ import config from "./config";
 import keys from "./keys";
 
 function handleCommand(input: Buffer): string {
-  console.log("Data:", input.toString());
   const { command, data } = parseInput(input);
 
   if (command === "ping") {
@@ -43,7 +42,7 @@ function parseInput(input: Buffer): { command: string; data: Array<string> } {
   const firstDataIndex = 4;
 
   const splitData = input.toString().split("\r\n");
-  console.log("Input data", splitData);
+  // console.log("Input data", splitData);
 
   const length = parseInt(splitData[lengthIndex].slice(1));
 

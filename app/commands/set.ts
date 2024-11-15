@@ -3,8 +3,6 @@ import { set } from "../memory";
 import type { RedisRecord } from "../types/RedisRecord";
 
 export default function (data: Array<string>) {
-  console.log("SET", data);
-
   const keyIndex = 0;
   const valIndex = 1;
 
