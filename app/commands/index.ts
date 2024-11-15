@@ -4,33 +4,30 @@ import set from "./set";
 import get from "./get";
 import config from "./config";
 import keys from "./keys";
+import info from "./info";
 import { encodeError } from "../resp/encode";
+import { COMMAND } from "../types/command";
+
+const commandFunctionMap: Record<COMMAND, Function> = {
+  [COMMAND.PING]: ping,
+  [COMMAND.ECHO]: echo,
+  [COMMAND.SET]: set,
+  [COMMAND.GET]: get,
+  [COMMAND.CONFIG]: config,
+  [COMMAND.KEYS]: keys,
+  [COMMAND.INFO]: info,
+};
 
 function handleCommand(input: Buffer): string {
   const { command, data } = parseInput(input);
 
-  if (command === "ping") {
-    return ping();
-  }
-
-  if (command === "echo") {
-    return echo(data);
-  }
-
-  if (command === "set") {
-    return set(data);
-  }
-
-  if (command === "get") {
-    return get(data);
-  }
-
-  if (command === "config") {
-    return config(data);
-  }
-
-  if (command === "keys") {
-    return keys(data);
+  if (isCommand(command)) {
+    const commandFunction = commandFunctionMap[command];
+    if (commandFunction) {
+      return commandFunction(data);
+    } else {
+      return encodeError(`Not implemented: ${command}`);
+    }
   }
 
   return encodeError(`Unknown command ${command}`);
@@ -68,6 +65,10 @@ function parseInput(input: Buffer): { command: string; data: Array<string> } {
   }
 
   return { command, data };
+}
+
+function isCommand(command: string): command is COMMAND {
+  return Object.values(COMMAND).includes(command as COMMAND);
 }
 
 export default handleCommand;
