@@ -18,3 +18,7 @@ export function encodeArray(data: Array<string>): string {
 export function encodeBulkString(data: string): string {
   return `$${data.length}\r\n${data}\r\n`;
 }
+
+export function encodeError(data: string): string {
+  return `-${data}\r\n`;
+}

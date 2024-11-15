@@ -4,6 +4,7 @@ import set from "./set";
 import get from "./get";
 import config from "./config";
 import keys from "./keys";
+import { encodeError } from "../resp/encode";
 
 function handleCommand(input: Buffer): string {
   const { command, data } = parseInput(input);
@@ -32,10 +33,11 @@ function handleCommand(input: Buffer): string {
     return keys(data);
   }
 
-  return "Unknown command\r\n";
+  return encodeError(`Unknown command ${command}`);
 }
 
 function parseInput(input: Buffer): { command: string; data: Array<string> } {
+  console.log("INPUT:", input.toString());
   const lengthIndex = 0;
   // const commandLengthIndex = 1;
   const commandIndex = 2;
