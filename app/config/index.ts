@@ -1,4 +1,5 @@
 import { setReplicationData } from "../replication";
+import { handshake } from "../replication/handshake";
 import { ConfigKey, type ConfigMap } from "../types/config";
 import { ReplicationDataKey } from "../types/replication";
 
@@ -37,8 +38,11 @@ export function readCommandLineArguments() {
 }
 
 function processCommandLineArguments() {
+  // If replicaof value is provided, if means this is a slave instance,
+  // and we should start the handshake with the master.
   if (config.replicaof !== "") {
     setReplicationData(ReplicationDataKey.role, "slave");
+    handshake();
   }
 }
 
