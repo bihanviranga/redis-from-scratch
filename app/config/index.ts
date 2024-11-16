@@ -1,9 +1,11 @@
+import { setReplicationData } from "../replication";
 import { ConfigKey, type ConfigMap } from "../types/config";
 
 const config: ConfigMap = {
   [ConfigKey.dir]: "./",
   [ConfigKey.dbfilename]: "dump.rdb",
   [ConfigKey.port]: "6379",
+  [ConfigKey.replicaof]: "",
 };
 
 export function readCommandLineArguments() {
@@ -30,6 +32,13 @@ export function readCommandLineArguments() {
   }
 
   console.log("[config] Configuration:", config);
+  processCommandLineArguments();
+}
+
+function processCommandLineArguments() {
+  if (config.replicaof !== "") {
+    setReplicationData("role", "slave");
+  }
 }
 
 export function readConfig(key: string) {

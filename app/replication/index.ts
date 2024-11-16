@@ -1,6 +1,7 @@
 import { encodeBulkString } from "../resp/encode";
 
-const replicationData = {
+// TODO: move the replication data keys to an enum
+const replicationData: Record<string, string | number> = {
   role: "master",
   connected_slaves: 0,
 };
@@ -12,4 +13,8 @@ export function replicationCommand() {
   });
   const encoded = encodeBulkString(response);
   return encoded;
+}
+
+export function setReplicationData(key: string, value: string | number) {
+  replicationData[key] = value;
 }

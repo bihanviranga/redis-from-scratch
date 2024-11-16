@@ -3,8 +3,11 @@ export enum ConfigKey {
   dbfilename = "dbfilename",
   // Location of the database file
   dir = "dir",
-  // listening port
+  // Listening port
   port = "port",
+  // Address of the master server (if this one is a replica)
+  // Ex: --replicaof "localhost 6379"
+  replicaof = "replicaof",
 }
 
 export type ConfigMap = Record<ConfigKey, string>;
