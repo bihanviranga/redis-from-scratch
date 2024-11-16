@@ -1,5 +1,6 @@
 import { setReplicationData } from "../replication";
 import { ConfigKey, type ConfigMap } from "../types/config";
+import { ReplicationDataKey } from "../types/replication";
 
 const config: ConfigMap = {
   [ConfigKey.dir]: "./",
@@ -37,7 +38,7 @@ export function readCommandLineArguments() {
 
 function processCommandLineArguments() {
   if (config.replicaof !== "") {
-    setReplicationData("role", "slave");
+    setReplicationData(ReplicationDataKey.role, "slave");
   }
 }
 

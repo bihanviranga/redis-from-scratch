@@ -1,9 +1,10 @@
 import { encodeBulkString } from "../resp/encode";
+import { ReplicationDataKey } from "../types/replication";
 
 // TODO: move the replication data keys to an enum
-const replicationData: Record<string, string | number> = {
-  role: "master",
-  connected_slaves: 0,
+const replicationData: Record<ReplicationDataKey, string | number> = {
+  [ReplicationDataKey.role]: "master",
+  [ReplicationDataKey.connected_slaves]: 0,
 };
 
 export function replicationCommand() {
@@ -15,6 +16,9 @@ export function replicationCommand() {
   return encoded;
 }
 
-export function setReplicationData(key: string, value: string | number) {
+export function setReplicationData(
+  key: ReplicationDataKey,
+  value: string | number,
+) {
   replicationData[key] = value;
 }
