@@ -73,6 +73,7 @@ export async function handshake() {
     const psyncResponse = await client.send(psyncPayload);
     if (psyncResponse.slice(1, 1 + FULLRESYNC.length) === FULLRESYNC) {
       console.log("[replication]\t[handshake]\tPSYNC executed (3/3)");
+      console.log(psyncResponse);
     } else {
       throw new Error(`PSYNC failed: ${psyncResponse}`);
     }

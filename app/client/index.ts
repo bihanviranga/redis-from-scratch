@@ -1,4 +1,5 @@
 import net from "net";
+import { listen } from "./listen";
 
 export class Client {
   private client: net.Socket | null = null;
@@ -40,7 +41,7 @@ export class Client {
 
       this.client.on("data", (data) => {
         if (this.isInProgress) return;
-        console.log("data:", data);
+        listen(data);
       });
     });
   }

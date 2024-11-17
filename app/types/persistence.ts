@@ -1,4 +1,7 @@
 export const MAGIC_NUMBER_VALUE = "REDIS";
+export const MAGIC_NUMBER_HEX = Array.from(MAGIC_NUMBER_VALUE)
+  .map((char) => char.charCodeAt(0).toString(16).padStart(2, "0"))
+  .join("");
 
 export type ParseKeyValueResult = {
   key: string;
