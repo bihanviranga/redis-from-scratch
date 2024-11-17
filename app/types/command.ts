@@ -6,4 +6,10 @@ export enum COMMAND {
   CONFIG = "config",
   KEYS = "keys",
   INFO = "info",
+  REPLCONF = "replconf",
+}
+
+export enum SUBCOMMAND {
+  LISTENING_PORT = "listening-port",
+  CAPA = "capa",
 }

@@ -5,6 +5,7 @@ import get from "./get";
 import config from "./config";
 import keys from "./keys";
 import info from "./info";
+import replConf from "./replConf";
 import { encodeError } from "../resp/encode";
 import { COMMAND } from "../types/command";
 
@@ -16,6 +17,7 @@ const commandFunctionMap: Record<COMMAND, Function> = {
   [COMMAND.CONFIG]: config,
   [COMMAND.KEYS]: keys,
   [COMMAND.INFO]: info,
+  [COMMAND.REPLCONF]: replConf,
 };
 
 function handleCommand(input: Buffer): string {
