@@ -1,5 +1,5 @@
 import { readCommandLineArguments } from "./config";
-import { readDatabaseFile } from "./persistence";
+import { readDatabaseFile } from "./persistence/read";
 import { startServer } from "./server";
 
 function startRedis() {
