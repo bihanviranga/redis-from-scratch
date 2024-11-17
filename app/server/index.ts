@@ -3,27 +3,31 @@ import handleCommand from "../commands";
 import { readConfig } from "../config";
 import { ConfigKey } from "../types/config";
 
+const activeConnections = new Map<string, net.Socket>();
+
 export function startServer() {
   const PORT = parseInt(readConfig(ConfigKey.port));
 
-  const server: net.Server = net.createServer((connection: net.Socket) => {
-    console.log(
-      `[server]\tConnected: ${connection.remoteAddress}:${connection.remotePort}`,
-    );
+  const server = net.createServer((connection: net.Socket) => {
+    const clientKey = `${connection.remoteAddress}:${connection.remotePort}`;
+    activeConnections.set(clientKey, connection);
+    console.log(`[server]\tConnected: ${clientKey}`);
 
     connection.on("data", (data: Buffer) => {
-      const response = handleCommand(data);
-      connection.write(response);
+      const response = handleCommand(data, connection);
+      if (response) {
+        connection.write(response);
+      }
     });
 
     connection.on("close", () => {
-      console.log(`[server]\tConnection closed`);
+      activeConnections.delete(clientKey);
+      console.log(`[server]\tConnection closed: ${clientKey}`);
     });
 
     connection.on("end", () => {
-      console.log(
-        `[server]\tDisconnected: ${connection.remoteAddress}:${connection.remotePort}`,
-      );
+      activeConnections.delete(clientKey);
+      console.log(`[server]\tDisconnected: ${clientKey}`);
     });
   });
 

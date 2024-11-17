@@ -3,6 +3,7 @@ import net from "net";
 export class Client {
   private client: net.Socket | null = null;
   private isConnected: boolean = false;
+  private isInProgress: boolean = false;
   private readonly host: string;
   private readonly port: number;
 
@@ -36,29 +37,39 @@ export class Client {
         this.isConnected = false;
         console.log("[client]\tConnection closed");
       });
+
+      this.client.on("data", (data) => {
+        if (this.isInProgress) return;
+        console.log("data:", data);
+      });
     });
   }
 
   // Send data and wait for a response
   public async send(data: string): Promise<string> {
     await this.connect();
+    this.isInProgress = true;
 
     return new Promise((resolve, reject) => {
       if (!this.client) {
+        this.isInProgress = false;
         return reject(new Error("[client]\tSocket is not initialized"));
       }
 
       this.client.once("data", (response) => {
         resolve(response.toString());
+        this.isInProgress = false;
       });
 
       this.client.once("error", (err) => {
         reject(err);
+        this.isInProgress = false;
       });
 
       this.client.write(data, (err) => {
         if (err) {
           reject(err);
+          this.isInProgress = false;
         }
       });
     });
@@ -68,6 +79,7 @@ export class Client {
   public close(): void {
     if (this.client) {
       this.client.end(() => {
+        this.isInProgress = false;
         console.log("[client]\tConnection ended");
       });
     }

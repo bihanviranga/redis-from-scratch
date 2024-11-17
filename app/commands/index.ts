@@ -1,3 +1,4 @@
+import * as net from "net";
 import echo from "./echo";
 import ping from "./ping";
 import set from "./set";
@@ -22,13 +23,13 @@ const commandFunctionMap: Record<COMMAND, Function> = {
   [COMMAND.PSYNC]: psync,
 };
 
-function handleCommand(input: Buffer): string {
+function handleCommand(input: Buffer, connection: net.Socket): string {
   const { command, data } = parseInput(input);
 
   if (isCommand(command)) {
     const commandFunction = commandFunctionMap[command];
     if (commandFunction) {
-      return commandFunction(data);
+      return commandFunction(data, connection);
     } else {
       return encodeError(`Not implemented: ${command}`);
     }
