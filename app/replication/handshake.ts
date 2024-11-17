@@ -4,7 +4,7 @@ import { ConfigKey } from "../types/config";
 import { Client } from "../client";
 import { OK, PONG } from "../consts/responses";
 import { COMMAND, SUBCOMMAND } from "../types/command";
-import { PSYNC2 } from "../types/replication";
+import { FULLRESYNC, PSYNC2 } from "../types/replication";
 
 export async function handshake() {
   console.log("[replication]\tStarting handshake with master");
@@ -63,18 +63,20 @@ export async function handshake() {
     // Stage 3: send PSYNC command
     const masterReplId = "?";
     const masterOffset = "-1";
+    // The ? and -1 tells the master that the replica has no data yet.
+    // The master should acknowledge this by sending a FULLRESYNC response.
     const psyncPayload = encodeArray([
       COMMAND.PSYNC,
       masterReplId,
       masterOffset,
     ]);
     const psyncResponse = await client.send(psyncPayload);
-    console.log("[replication]\t[handshake]\tPSYNC executed (3/3)");
-    console.log(psyncResponse);
+    if (psyncResponse.slice(1, 1 + FULLRESYNC.length) === FULLRESYNC) {
+      console.log("[replication]\t[handshake]\tPSYNC executed (3/3)");
+    } else {
+      throw new Error(`PSYNC failed: ${psyncResponse}`);
+    }
   } catch (err: any) {
-    // console.error("[replication::handshake]\rERROR", err.message);
     console.error(`[replication]\t[handshake]\tERROR: ${err.message}`);
-  } finally {
-    client.close();
   }
 }
