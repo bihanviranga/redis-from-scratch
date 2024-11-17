@@ -15,17 +15,30 @@ export default function (data: Array<string>, connection: net.Socket) {
   // for (let i = 0; i < EMPTY_RDB_FILE.length; i += 2) {
   //   byteArray[i / 2] = parseInt(EMPTY_RDB_FILE.substr(i, 2), 16);
   // }
-  const base64 =
-    "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog==";
+  // const base64 =
+  //   "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog==";
+  //
+  // const rdbBuffer = Buffer.from(base64, "base64");
+  //
+  // const rdbHead = Buffer.from(`$${rdbBuffer.length}\r\n`);
+  //
+  // console.log(rdbHead.toString() + rdbBuffer.toString());
 
-  const rdbBuffer = Buffer.from(base64, "base64");
+  // const bytes: number[] = [];
+  // for (let i = 0; i < EMPTY_RDB_FILE.length; i += 2) {
+  //   const byte = parseInt(EMPTY_RDB_FILE.substring(i, i + 2), 16);
+  //   bytes.push(byte);
+  // }
+  const binaryData = new Uint8Array(EMPTY_RDB_FILE.length / 2);
 
-  const rdbHead = Buffer.from(`$${rdbBuffer.length}\r\n`);
+  for (let i = 0; i < EMPTY_RDB_FILE.length; i += 2) {
+    binaryData[i / 2] = parseInt(EMPTY_RDB_FILE.substring(i, i + 2), 16);
+  }
 
-  console.log(rdbHead.toString() + rdbBuffer.toString());
   // connection.write(Buffer.concat([rdbHead, rdbBuffer]));
   // const rdbPayload = `$${byteArray.length}\r\n${byteArray.toString()}`;
-  connection.write(rdbHead.toString() + rdbBuffer.toString());
+  connection.write(`$${binaryData.length}\r\n`);
+  connection.write(binaryData);
   // Adding a fake timeout because when we send the data at once sometimes it gets considered as a single call.
   // setTimeout(() => {
   //   const rdbPayload = `$${EMPTY_RDB_FILE.length}\r\n${EMPTY_RDB_FILE}`;
