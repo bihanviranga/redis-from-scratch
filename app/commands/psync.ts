@@ -10,9 +10,11 @@ export default function (data: Array<string>, connection: net.Socket) {
   const responseToEncode = `${FULLRESYNC} ${replId} ${replOffset}`;
   const encoded = encodeSimpleString(responseToEncode);
   connection.write(encoded);
+  const rdbPayload = `$${EMPTY_RDB_FILE.length}\r\n${EMPTY_RDB_FILE}`;
+  connection.write(rdbPayload);
   // Adding a fake timeout because when we send the data at once sometimes it gets considered as a single call.
-  setTimeout(() => {
-    const rdbPayload = `$${EMPTY_RDB_FILE.length}\r\n${EMPTY_RDB_FILE}`;
-    connection.write(rdbPayload);
-  }, 1000);
+  // setTimeout(() => {
+  //   const rdbPayload = `$${EMPTY_RDB_FILE.length}\r\n${EMPTY_RDB_FILE}`;
+  //   connection.write(rdbPayload);
+  // }, 500);
 }
