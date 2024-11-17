@@ -22,7 +22,7 @@ export async function handshake() {
       console.log("[replication]\t[handshake]\tPING successful (1/3)");
     }
 
-    // Stage 2: send REPLCONF with listening-port
+    // Stage 2.1: send REPLCONF with listening-port
     const listeningPort = readConfig(ConfigKey.port);
     const replConfListeningPortPayload = encodeArray([
       COMMAND.REPLCONF,
@@ -34,7 +34,7 @@ export async function handshake() {
     );
     if (replConfListeningPortResponse === OK) {
       console.log(
-        "[replication]\t[handshake]\tREPLCONF listening-port successful (1.5/3)",
+        "[replication]\t[handshake]\tREPLCONF listening-port successful (2/3)",
       );
     } else {
       throw new Error(
@@ -42,7 +42,7 @@ export async function handshake() {
       );
     }
 
-    // Stage 3: send REPLCONF with capabilities
+    // Stage 2.2: send REPLCONF with capabilities
     const replConfCapaPayload = encodeArray([
       COMMAND.REPLCONF,
       SUBCOMMAND.CAPA,
@@ -50,12 +50,26 @@ export async function handshake() {
     ]);
     const replConfCapaResponse = await client.send(replConfCapaPayload);
     if (replConfCapaResponse === OK) {
-      console.log("[replication]\t[handshake]\tREPLCONF capa successful (2/3)");
+      console.log(
+        "[replication]\t[handshake]\tREPLCONF capa successful (2.5/3)",
+      );
     } else {
       throw new Error(
         `REPLCONF capa command failed: ${replConfCapaResponse.toString()}`,
       );
     }
+
+    // Stage 3: send PSYNC command
+    const masterReplId = "?";
+    const masterOffset = "-1";
+    const psyncPayload = encodeArray([
+      COMMAND.PSYNC,
+      masterReplId,
+      masterOffset,
+    ]);
+    const psyncResponse = await client.send(psyncPayload);
+    console.log("[replication]\t[handshake]\tPSYNC executed (3/3)");
+    console.log(psyncResponse);
   } catch (err: any) {
     // console.error("[replication::handshake]\rERROR", err.message);
     console.error(`[replication]\t[handshake]\tERROR: ${err.message}`);

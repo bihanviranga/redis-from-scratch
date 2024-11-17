@@ -25,3 +25,7 @@ export function setReplicationData(
 ) {
   replicationData[key] = value;
 }
+
+export function getReplicationData(key: ReplicationDataKey): string | number {
+  return replicationData[key];
+}

@@ -22,3 +22,7 @@ export function encodeBulkString(data: string): string {
 export function encodeError(data: string): string {
   return `-${data}\r\n`;
 }
+
+export function encodeSimpleString(data: string): string {
+  return `+${data}\r\n`;
+}

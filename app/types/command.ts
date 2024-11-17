@@ -7,6 +7,7 @@ export enum COMMAND {
   KEYS = "keys",
   INFO = "info",
   REPLCONF = "replconf",
+  PSYNC = "psync",
 }
 
 export enum SUBCOMMAND {
