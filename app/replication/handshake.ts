@@ -4,6 +4,7 @@ import { ConfigKey } from "../types/config";
 import { Client } from "../client";
 import { OK, PONG } from "../consts/responses";
 import { COMMAND, SUBCOMMAND } from "../types/command";
+import { PSYNC2 } from "../types/replication";
 
 export async function handshake() {
   console.log("[replication]\tStarting handshake with master");
@@ -46,7 +47,7 @@ export async function handshake() {
     const replConfCapaPayload = encodeArray([
       COMMAND.REPLCONF,
       SUBCOMMAND.CAPA,
-      "psync2", // TODO: fix this hard-coded value
+      PSYNC2,
     ]);
     const replConfCapaResponse = await client.send(replConfCapaPayload);
     if (replConfCapaResponse === OK) {
