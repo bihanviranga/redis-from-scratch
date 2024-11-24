@@ -4,6 +4,7 @@ import { encodeSimpleString } from "../resp/encode";
 import { FULLRESYNC, ReplicationDataKey } from "../types/replication";
 import { EMPTY_RDB_FILE } from "../consts/rdb";
 import { getDatabaseAsRDB } from "../persistence/write";
+import { registerReplica } from "../server/connection";
 
 export default function (data: Array<string>, connection: net.Socket) {
   const replId = getReplicationData(ReplicationDataKey.master_replid);
@@ -11,6 +12,9 @@ export default function (data: Array<string>, connection: net.Socket) {
   const responseToEncode = `${FULLRESYNC} ${replId} ${replOffset}`;
   const encoded = encodeSimpleString(responseToEncode);
   connection.write(encoded);
+
+  // At this point the handshake is over, so we can mark the connection as a connected replica.
+  registerReplica(connection);
 
   // Convert the RDB file to binary before sending
   const rdbFile = getDatabaseAsRDB();

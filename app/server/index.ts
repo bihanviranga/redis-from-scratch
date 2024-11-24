@@ -2,15 +2,18 @@ import * as net from "net";
 import handleCommand from "../commands";
 import { readConfig } from "../config";
 import { ConfigKey } from "../types/config";
-
-const activeConnections = new Map<string, net.Socket>();
+import {
+  addActiveConnection,
+  deleteActiveConnection,
+  generateClientKey,
+} from "./connection";
 
 export function startServer() {
   const PORT = parseInt(readConfig(ConfigKey.port));
 
   const server = net.createServer((connection: net.Socket) => {
-    const clientKey = `${connection.remoteAddress}:${connection.remotePort}`;
-    activeConnections.set(clientKey, connection);
+    const clientKey = generateClientKey(connection);
+    addActiveConnection(clientKey, connection);
     console.log(`[server]\tConnected: ${clientKey}`);
 
     connection.on("data", (data: Buffer) => {
@@ -21,12 +24,12 @@ export function startServer() {
     });
 
     connection.on("close", () => {
-      activeConnections.delete(clientKey);
+      deleteActiveConnection(clientKey);
       console.log(`[server]\tConnection closed: ${clientKey}`);
     });
 
     connection.on("end", () => {
-      activeConnections.delete(clientKey);
+      deleteActiveConnection(clientKey);
       console.log(`[server]\tDisconnected: ${clientKey}`);
     });
   });
