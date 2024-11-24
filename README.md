@@ -6,7 +6,7 @@ Implementing redis from scratch to complete the challenge on codecrafters.io.
 
 More features on the way.
 
-Currenly implementing: master-slave replication
+Currenly implementing: master-replica propagation
 
 ## Running
 
