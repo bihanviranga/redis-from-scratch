@@ -56,3 +56,14 @@ export function registerReplica(connection: net.Socket) {
   replicas.push(clientKey);
   console.log(`[server]\tRegistered replica with key: ${clientKey}`);
 }
+
+export function getAllReplicaConnections(): Array<net.Socket> {
+  const replicaConnections: Array<net.Socket> = [];
+  activeConnections.forEach((conn, key) => {
+    if (replicas.includes(key)) {
+      replicaConnections.push(conn);
+    }
+  });
+
+  return replicaConnections;
+}

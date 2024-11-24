@@ -14,3 +14,5 @@ export enum SUBCOMMAND {
   LISTENING_PORT = "listening-port",
   CAPA = "capa",
 }
+
+export const PROPAGATED_COMMANDS = [COMMAND.SET];

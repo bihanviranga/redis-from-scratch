@@ -2,6 +2,7 @@ import { encodeBulkString } from "../resp/encode";
 import { ReplicationDataKey } from "../types/replication";
 
 const replicationData: Record<ReplicationDataKey, string | number> = {
+  // TODO: change this 'master' to a type - also check propagate.ts
   [ReplicationDataKey.role]: "master",
   [ReplicationDataKey.connected_slaves]: 0,
   // TODO: this should ideally reset everytime the master server restarts. Hard-coding is temporary.

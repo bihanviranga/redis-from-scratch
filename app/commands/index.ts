@@ -10,6 +10,7 @@ import replConf from "./replConf";
 import psync from "./psync";
 import { encodeError } from "../resp/encode";
 import { COMMAND } from "../types/command";
+import { propagate } from "../replication/propagate";
 
 const commandFunctionMap: Record<COMMAND, Function> = {
   [COMMAND.PING]: ping,
@@ -23,19 +24,25 @@ const commandFunctionMap: Record<COMMAND, Function> = {
   [COMMAND.PSYNC]: psync,
 };
 
-function handleCommand(input: Buffer, connection: net.Socket): string {
-  const { command, data } = parseInput(input);
+function handleCommand(input: Buffer, connection?: net.Socket): string {
+  try {
+    const { command, data } = parseInput(input);
 
-  if (isCommand(command)) {
-    const commandFunction = commandFunctionMap[command];
-    if (commandFunction) {
-      return commandFunction(data, connection);
-    } else {
-      return encodeError(`Not implemented: ${command}`);
+    if (isCommand(command)) {
+      const commandFunction = commandFunctionMap[command];
+      if (commandFunction) {
+        propagate(command, input);
+        return commandFunction(data, connection);
+      } else {
+        return encodeError(`Not implemented: ${command}`);
+      }
     }
-  }
 
-  return encodeError(`Unknown command ${command}`);
+    return encodeError(`Unknown command ${command}`);
+  } catch (e: any) {
+    // Fail silently
+    return encodeError("Something went wrong");
+  }
 }
 
 function parseInput(input: Buffer): { command: string; data: Array<string> } {

@@ -1,3 +1,4 @@
+import handleCommand from "../commands";
 import { MAGIC_NUMBER_HEX, MAGIC_NUMBER_VALUE } from "../types/persistence";
 
 /*
@@ -10,5 +11,7 @@ export function listen(data: Buffer) {
     MAGIC_NUMBER_VALUE
   ) {
     console.log("[client]\tReceived RDB file");
+  } else {
+    handleCommand(data);
   }
 }
